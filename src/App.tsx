@@ -12,15 +12,36 @@ import WatchPage from "@/pages/WatchPage";
 import MyPetsPage from "@/pages/MyPetsPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
+import V2Home from "@/pages/V2Home";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
+  const appVersion = useAppStore((s) => s.appVersion);
 
   if (!hasOnboarded) {
     return <Onboarding />;
+  }
+
+  // V2 simple mode — single screen app
+  if (appVersion === 'v2') {
+    return (
+      <Routes>
+        <Route path="/" element={<V2Home />} />
+        {/* V1 routes still accessible */}
+        <Route element={<AppLayout />}>
+          <Route path="/v1" element={<HomePage />} />
+          <Route path="/listen" element={<ListenPage />} />
+          <Route path="/watch" element={<WatchPage />} />
+          <Route path="/pets" element={<MyPetsPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
   }
 
   return (
