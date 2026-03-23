@@ -8,8 +8,8 @@ interface AppState {
   setOnboarded: () => void;
 
   // App version
-  appVersion: 'v2' | 'v1';
-  setAppVersion: (v: 'v2' | 'v1') => void;
+  appVersion: 'v3' | 'v2' | 'v1';
+  setAppVersion: (v: 'v3' | 'v2' | 'v1') => void;
 
   // Pets
   pets: Pet[];
