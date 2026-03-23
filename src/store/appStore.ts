@@ -31,7 +31,7 @@ export const useAppStore = create<AppState>()(
       hasOnboarded: false,
       setOnboarded: () => set({ hasOnboarded: true }),
 
-      appVersion: 'v2',
+      appVersion: 'v3',
       setAppVersion: (v) => set({ appVersion: v }),
 
       pets: [],
