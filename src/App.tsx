@@ -12,15 +12,60 @@ import WatchPage from "@/pages/WatchPage";
 import MyPetsPage from "@/pages/MyPetsPage";
 import HistoryPage from "@/pages/HistoryPage";
 import SettingsPage from "@/pages/SettingsPage";
+import V2Home from "@/pages/V2Home";
+import V3Splash from "@/pages/V3Splash";
+import V3Setup from "@/pages/V3Setup";
+import V3Home from "@/pages/V3Home";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const hasOnboarded = useAppStore((s) => s.hasOnboarded);
+  const appVersion = useAppStore((s) => s.appVersion);
 
   if (!hasOnboarded) {
     return <Onboarding />;
+  }
+
+  // V3 Shazam-style MVP
+  if (appVersion === 'v3') {
+    return (
+      <Routes>
+        <Route path="/" element={<V3Splash />} />
+        <Route path="/v3/setup" element={<V3Setup />} />
+        <Route path="/v3/home" element={<V3Home />} />
+        {/* V1/V2 still accessible */}
+        <Route path="/v2" element={<V2Home />} />
+        <Route element={<AppLayout />}>
+          <Route path="/v1" element={<HomePage />} />
+          <Route path="/listen" element={<ListenPage />} />
+          <Route path="/watch" element={<WatchPage />} />
+          <Route path="/pets" element={<MyPetsPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
+  }
+
+  // V2 simple mode
+  if (appVersion === 'v2') {
+    return (
+      <Routes>
+        <Route path="/" element={<V2Home />} />
+        <Route element={<AppLayout />}>
+          <Route path="/v1" element={<HomePage />} />
+          <Route path="/listen" element={<ListenPage />} />
+          <Route path="/watch" element={<WatchPage />} />
+          <Route path="/pets" element={<MyPetsPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
   }
 
   return (

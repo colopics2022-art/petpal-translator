@@ -7,6 +7,10 @@ interface AppState {
   hasOnboarded: boolean;
   setOnboarded: () => void;
 
+  // App version
+  appVersion: 'v3' | 'v2' | 'v1';
+  setAppVersion: (v: 'v3' | 'v2' | 'v1') => void;
+
   // Pets
   pets: Pet[];
   selectedPetId: string | null;
@@ -26,6 +30,9 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       hasOnboarded: false,
       setOnboarded: () => set({ hasOnboarded: true }),
+
+      appVersion: 'v3',
+      setAppVersion: (v) => set({ appVersion: v }),
 
       pets: [],
       selectedPetId: null,
