@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PawTalk AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FFF9E6;
+    --pink: #FFD1DC;
+    --mint: #B2F2BB;
+    --pink-dark: #FF9BB5;
+    --mint-dark: #6EE485;
+    --text: #3D2C2C;
+    --text-light: #8B6E6E;
+    --white: #FFFFFF;
+    --shadow: rgba(255, 150, 180, 0.3);
+    --radius: 30px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Quicksand', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 500px;
+    min-height: 100vh;
+    background: var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SCREENS */
+  .screen {
+    position: absolute;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateY(20px);
+  }
+
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+  }
+
+  /* BG DECORATIONS */
+  .bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* SPLASH */
+  #splash { background: linear-gradient(160deg, #FFF9E6 0%, #FFE8F0 100%); }
+
+  .splash-logo {
+    font-size: 80px;
+    animation: wag 1s ease-in-out infinite;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  @keyframes wag {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+
+  .splash-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+  }
+
+  .splash-sub {
+    font-size: 16px;
+    color: var(--text-light);
+    margin-top: 8px;
+    font-weight: 500;
+  }
+
+  .splash-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  .splash-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--pink-dark);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .splash-dot:nth-child(2) { animation-delay: 0.2s; background: var(--mint-dark); }
+  .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* SETUP */
+  #setup { justify-content: flex-start; padding-top: 80px; }
+
+  .setup-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .setup-sub {
+    color: var(--text-light);
+    font-size: 15px;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .setup-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(255, 150, 180, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 8px; }
+
+  .input-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .input-field {
+    border: 2.5px solid var(--pink);
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .input-field:focus { border-color: var(--pink-dark); }
+
+  .pet-select {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .pet-option {
+    border: 2.5px solid var(--pink);
+    border-radius: 20px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--cream);
+    transition: all 0.2s;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .pet-option .pet-emoji { font-size: 36px; display: block; margin-bottom: 6px; }
+
+  .pet-option.selected {
+    background: linear-gradient(135deg, var(--pink), var(--mint));
+    border-color: transparent;
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px var(--shadow);
+  }
+
+  /* BUTTONS */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--pink-dark), var(--mint-dark));
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 18px 32px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 6px 20px var(--shadow);
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary:hover { transform: scale(1.03); box-shadow: 0 10px 28px var(--shadow); }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-secondary {
+    background: white;
+    color: var(--text);
+    border: 2.5px solid var(--pink);
+    border-radius: 20px;
+    padding: 14px 24px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex: 1;
+  }
+
+  .btn-secondary:hover { background: var(--pink); }
+
+  /* HOME */
+  #home { gap: 32px; }
+
+  .home-greeting {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .home-greeting span { color: var(--pink-dark); }
+
+  .home-instruction {
+    font-size: 15px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
+  .paw-btn {
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink), var(--mint));
+    border: none;
+    font-size: 64px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 0 rgba(255, 155, 181, 0.5);
+    animation: pulse 2s ease-in-out infinite;
+    transition: transform 0.15s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .paw-btn:hover { transform: scale(1.05); }
+  .paw-btn:active { transform: scale(0.95); animation: none; }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 155, 181, 0.5); }
+    70% { box-shadow: 0 0 0 30px rgba(255, 155, 181, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 155, 181, 0); }
+  }
+
+  .home-pets-row {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 600;
+    align-items: center;
+  }
+
+  .stat-chip {
+    background: white;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* LISTENING */
+  #listening { gap: 28px; background: linear-gradient(160deg, #FFF0F5 0%, #F0FFF5 100%); }
+
+  .listen-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .listen-timer {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 24px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
+  .waveform {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 80px;
+  }
+
+  .wave-bar {
+    width: 8px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, var(--pink-dark), var(--mint-dark));
+    animation: wave 0.8s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.0s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(7) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(8) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(9) { animation-delay: 0.4s; }
+
+  @keyframes wave {
+    0%, 100% { height: 16px; opacity: 0.4; }
+    50% { height: 60px; opacity: 1; }
+  }
+
+  .paw-btn-stop {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF6B8A, #FF4B6B);
+    border: none;
+    font-size: 48px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(255, 75, 107, 0.4);
+    transition: transform 0.15s;
+  }
+
+  .paw-btn-stop:active { transform: scale(0.95); }
+
+  /* THINKING */
+  #thinking { gap: 24px; }
+
+  .thinking-emoji {
+    font-size: 80px;
+    animation: think-bounce 1.5s ease-in-out infinite;
+    display: block;
+  }
+
+  @keyframes think-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .thinking-text {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 28px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 4px solid var(--pink);
+    border-top-color: var(--pink-dark);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESULT */
+  #result { gap: 20px; padding-top: 60px; justify-content: flex-start; overflow-y: auto; }
+
+  .result-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 24px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
+  .cartoon-box {
+    width: 200px; height: 200px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #FFE8F0, #E8FFF0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 90px;
+    box-shadow: 0 12px 40px rgba(255,150,180,0.2);
+    animation: result-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 3px solid white;
+  }
+
+  @keyframes result-pop {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .mood-label {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--pink-dark);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .speech-bubble {
+    background: white;
+    border: 2.5px solid var(--pink);
+    border-radius: 24px;
+    padding: 20px 24px;
+    position: relative;
+    max-width: 320px;
+    text-align: center;
+    animation: bubble-in 0.4s ease 0.3s both;
+    box-shadow: 0 4px 20px rgba(255,150,180,0.15);
+  }
+
+  .speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-bottom-color: var(--pink);
+  }
+
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: white;
+  }
+
+  @keyframes bubble-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .speech-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .result-btns {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .confidence-bar-wrap {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .confidence-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 6px;
+  }
+
+  .confidence-bar {
+    height: 8px;
+    background: #F0E0E8;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pink-dark), var(--mint-dark));
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  /* NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
+    background: white;
+    border-top: 2px solid #FFE8F0;
+    display: flex;
+    padding: 12px 0 20px;
+    z-index: 100;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px;
+    border: none;
+    background: none;
+    transition: transform 0.15s;
+  }
+
+  .nav-item:active { transform: scale(0.9); }
+
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 11px; font-weight: 700; color: var(--text-light); font-family: 'Quicksand', sans-serif; }
+  .nav-item.active .nav-label { color: var(--pink-dark); }
+  .nav-item.active .nav-icon { filter: saturate(2); }
+
+  /* HISTORY SCREEN */
+  #history { justify-content: flex-start; padding-top: 70px; overflow-y: auto; gap: 16px; padding-bottom: 100px; }
+
+  .history-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    align-self: flex-start;
+  }
+
+  .history-item {
+    background: white;
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .history-item:active { transform: scale(0.98); }
+
+  .history-emoji { font-size: 40px; }
+
+  .history-info { flex: 1; }
+  .history-mood { font-family: 'Fredoka', sans-serif; font-size: 16px; font-weight: 600; color: var(--text); }
+  .history-text { font-size: 13px; color: var(--text-light); font-weight: 500; margin-top: 2px; }
+  .history-time { font-size: 12px; color: var(--text-light); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+  }
+
+  .empty-state .empty-emoji { font-size: 60px; display: block; margin-bottom: 12px; }
+  .empty-state p { font-weight: 600; font-size: 16px; }
+
+  /* SHARE TOAST */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 15px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 400px) {
+    .paw-btn { width: 140px; height: 140px; font-size: 54px; }
+    .cartoon-box { width: 180px; height: 180px; font-size: 72px; }
+    .splash-title { font-size: 42px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SPLASH -->
+  <div class="screen active" id="splash">
+    <span class="splash-logo">🐾</span>
+    <h1 class="splash-title">PawTalk AI</h1>
+    <p class="splash-sub">Speak Paw. Understand All.</p>
+    <div class="splash-dots">
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="screen" id="setup">
+    <h2 class="setup-title">Let's Get Started! 🎉</h2>
+    <p class="setup-sub">Tell us about your furry friend</p>
+    <div class="setup-card">
+      <div class="input-group">
+        <label class="input-label">What's your pet's name?</label>
+        <input class="input-field" id="pet-name-input" type="text" placeholder="e.g. Whiskers, Buddy..." maxlength="20">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Is it a Cat or Dog?</label>
+        <div class="pet-select">
+          <div class="pet-option" id="opt-cat" onclick="selectPet('cat')">
+            <span class="pet-emoji">🐱</span>Cat
+          </div>
+          <div class="pet-option" id="opt-dog" onclick="selectPet('dog')">
+            <span class="pet-emoji">🐶</span>Dog
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="startApp()">Let's Go! 🎉</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="home">
+    <div class="home-greeting">What is <span id="pet-name-display">your pet</span> saying? 🤔</div>
+    <p class="home-instruction">Tap the paw to record</p>
+    <button class="paw-btn" onclick="startListening()">🐾</button>
+    <div class="home-pets-row">
+      <div class="stat-chip">🎙️ <span id="translation-count">0</span> translations</div>
+      <div class="stat-chip" id="pet-type-chip">🐱 Cat</div>
+    </div>
+  </div>
+
+  <!-- LISTENING -->
+  <div class="screen" id="listening">
+    <div class="listen-title">Listening... 👂</div>
+    <div class="listen-timer" id="timer">0:00</div>
+    <div class="waveform" id="waveform"></div>
+    <button class="paw-btn-stop" onclick="stopListening()">⏹️</button>
+    <p style="font-size:14px; color: var(--text-light); font-weight:600;">Tap to stop early</p>
+  </div>
+
+  <!-- THINKING -->
+  <div class="screen" id="thinking">
+    <span class="thinking-emoji" id="thinking-emoji">🐱</span>
+    <div class="thinking-text">Decoding <span id="thinking-pet-type">meows</span>...</div>
+    <div class="spinner"></div>
+    <p style="font-size:14px; color: var(--text-light); font-weight:600; margin-top:8px;">AI is working its magic ✨</p>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="result">
+    <div class="result-title">Your Pet Says:</div>
+    <div class="cartoon-box" id="result-cartoon">🐱</div>
+    <div class="mood-label" id="result-mood">HUNGRY</div>
+    <div class="speech-bubble">
+      <div class="speech-text" id="result-text">Loading...</div>
+    </div>
+    <div class="confidence-bar-wrap">
+      <div class="confidence-label">
+        <span>Confidence</span>
+        <span id="confidence-pct">87%</span>
+      </div>
+      <div class="confidence-bar">
+        <div class="confidence-fill" id="confidence-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="result-btns">
+      <button class="btn-secondary" onclick="goHome()">🔄 Try Again</button>
+      <button class="btn-primary" style="font-size:17px; padding:14px 20px;" onclick="shareResult()">📤 Share</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="screen" id="history">
+    <div class="history-title">History 📖</div>
+    <div id="history-list" style="width:100%;"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="main-nav" style="display:none;">
+    <button class="nav-item active" id="nav-home" onclick="showTab('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" id="nav-history" onclick="showTab('history')">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">History</span>
+    </button>
+  </nav>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const TRANSLATIONS = {
+  hungry: {
+    cat: { emoji: '😾', cartoon: '🍽️', text: "The bowl is 10% empty. I am fading away..." },
+    dog: { emoji: '🐶', cartoon: '🦴', text: "FOOD. NOW. PLEASE. I am literally dying here." }
+  },
+  sassy: {
+    cat: { emoji: '😼', cartoon: '😎', text: "I'm the boss. You're just the HR department." },
+    dog: { emoji: '🐕', cartoon: '💅', text: "I did NOT appreciate that bath. At all." }
+  },
+  lazy: {
+    cat: { emoji: '😴', cartoon: '🛋️', text: "I've had a long day of napping. I need a nap." },
+    dog: { emoji: '🐾', cartoon: '💤', text: "Five more minutes. The park can wait." }
+  },
+  chaos: {
+    cat: { emoji: '🙀', cartoon: '⚡', text: "I have the zoomies. Your rug is my racetrack." },
+    dog: { emoji: '🐩', cartoon: '🌪️', text: "ZOOMIES ZOOMIES ZOOMIES ZOOMIES ZOOMIES!!!" }
+  },
+  loving: {
+    cat: { emoji: '😻', cartoon: '💕', text: "You're acceptable. For a human." },
+    dog: { emoji: '🥰', cartoon: '❤️', text: "You're my favorite human. Now give me a treat." }
+  },
+  bored: {
+    cat: { emoji: '🐱', cartoon: '😑', text: "Entertain me. I've knocked everything off the shelf." },
+    dog: { emoji: '🐶', cartoon: '😩', text: "Play with me or I'm eating your shoes. Your call." }
+  }
+};
+
+const MOODS = ['hungry','sassy','lazy','chaos','loving','bored'];
+
+let petName = '', petType = 'cat', timerInterval, seconds = 0;
+let translations = JSON.parse(localStorage.getItem('pawTalkHistory') || '[]');
+let currentResult = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + tab).classList.add('active');
+  if (tab === 'history') {
+    renderHistory();
+    showScreen('history');
+  } else {
+    showScreen('home');
+  }
+}
+
+function selectPet(type) {
+  petType = type;
+  document.getElementById('opt-cat').classList.toggle('selected', type === 'cat');
+  document.getElementById('opt-dog').classList.toggle('selected', type === 'dog');
+}
+
+function startApp() {
+  const nameVal = document.getElementById('pet-name-input').value.trim();
+  if (!nameVal) { showToast('Enter your pet\'s name! 🐾'); return; }
+  if (!petType) { showToast('Pick cat or dog! 🐱🐶'); return; }
+  petName = nameVal;
+  localStorage.setItem('petName', petName);
+  localStorage.setItem('petType', petType);
+  document.getElementById('pet-name-display').textContent = petName;
+  document.getElementById('pet-type-chip').textContent = petType === 'cat' ? '🐱 Cat' : '🐶 Dog';
+  document.getElementById('translation-count').textContent = translations.length;
+  document.getElementById('main-nav').style.display = 'flex';
+  showScreen('home');
+}
+
+function startListening() {
+  seconds = 0;
+  showScreen('listening');
+  buildWaveform();
+  updateTimer();
+  timerInterval = setInterval(() => {
+    seconds++;
+    updateTimer();
+    if (seconds >= 10) stopListening();
+  }, 1000);
+}
+
+function buildWaveform() {
+  const wf = document.getElementById('waveform');
+  wf.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    bar.style.height = (Math.random() * 40 + 10) + 'px';
+    wf.appendChild(bar);
+  }
+}
+
+function updateTimer() {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  document.getElementById('timer').textContent = m + ':' + String(s).padStart(2,'0');
+}
+
+function stopListening() {
+  clearInterval(timerInterval);
+  const emoji = petType === 'cat' ? '🐱' : '🐶';
+  const soundWord = petType === 'cat' ? 'meows' : 'barks';
+  document.getElementById('thinking-emoji').textContent = emoji;
+  document.getElementById('thinking-pet-type').textContent = soundWord;
+  showScreen('thinking');
+  setTimeout(showResult, 2200);
+}
+
+function showResult() {
+  const mood = MOODS[Math.floor(Math.random() * MOODS.length)];
+  const data = TRANSLATIONS[mood][petType];
+  const confidence = Math.floor(Math.random() * 20 + 75);
+
+  currentResult = { mood, text: data.text, cartoon: data.cartoon, emoji: data.emoji, confidence, petName, petType, time: new Date().toISOString() };
+  translations.unshift(currentResult);
+  if (translations.length > 50) translations.pop();
+  localStorage.setItem('pawTalkHistory', JSON.stringify(translations));
+  document.getElementById('translation-count').textContent = translations.length;
+
+  document.getElementById('result-cartoon').textContent = data.cartoon;
+  document.getElementById('result-mood').textContent = mood.toUpperCase();
+  document.getElementById('result-text').textContent = data.text;
+  document.getElementById('confidence-pct').textContent = confidence + '%';
+
+  showScreen('result');
+  setTimeout(() => {
+    document.getElementById('confidence-fill').style.width = confidence + '%';
+  }, 100);
+}
+
+function goHome() {
+  showTab('home');
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (translations.length === 0) {
+    list.innerHTML = '<div class="empty-state"><span class="empty-emoji">🐾</span><p>No translations yet!<br>Tap the paw button to start.</p></div>';
+    return;
+  }
+  list.innerHTML = translations.map(t => {
+    const d = TRANSLATIONS[t.mood]?.[t.petType] || {};
+    const ago = timeAgo(new Date(t.time));
+    return `<div class="history-item">
+      <div class="history-emoji">${d.cartoon || '🐾'}</div>
+      <div class="history-info">
+        <div class="history-mood">${t.mood.charAt(0).toUpperCase() + t.mood.slice(1)} — ${t.petName}</div>
+        <div class="history-text">${t.text}</div>
+      </div>
+      <div class="history-time">${ago}</div>
+    </div>`;
+  }).join('');
+}
+
+function timeAgo(date) {
+  const diff = Math.floor((Date.now() - date) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function shareResult() {
+  if (!currentResult) return;
+  const text = `🐾 PawTalk AI says ${currentResult.petName} is feeling ${currentResult.mood.toUpperCase()}!\n"${currentResult.text}"\n\nTry PawTalk AI!`;
+  if (navigator.share) {
+    navigator.share({ title: 'PawTalk AI', text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard! 📋'));
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// INIT
+window.addEventListener('load', () => {
+  const savedName = localStorage.getItem('petName');
+  const savedType = localStorage.getItem('petType');
+  if (savedName && savedType) {
+    petName = savedName;
+    petType = savedType;
+    document.getElementById('pet-name-display').textContent = petName;
+    document.getElementById('pet-type-chip').textContent = petType === 'cat' ? '🐱 Cat' : '🐶 Dog';
+    document.getElementById('translation-count').textContent = translations.length;
+    document.getElementById('main-nav').style.display = 'flex';
+    setTimeout(() => showScreen('home'), 2000);
+  } else {
+    setTimeout(() => showScreen('setup'), 2000);
+  }
+});
+</script>
+</body>
+</html>
