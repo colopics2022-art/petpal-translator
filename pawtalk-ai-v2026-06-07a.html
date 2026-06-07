@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawTalk AI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap');
+
+  :root {
+    --bg: #0a0f1e;
+    --bg2: #111827;
+    --surface: rgba(255,255,255,0.05);
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f4ff;
+    --muted: #8892a4;
+    --accent: #6c8cff;
+    --accent2: #a78bfa;
+    --success: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --ring-1: rgba(108,140,255,0.15);
+    --ring-2: rgba(108,140,255,0.08);
+    --ring-3: rgba(108,140,255,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    padding: 0 16px;
+  }
+
+  /* Subtle starfield bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108,140,255,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(167,139,250,0.07) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { width: 100%; max-width: 420px; position: relative; z-index: 1; padding: 48px 0 40px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 48px; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); font-style: italic; }
+  .tagline { font-size: 13px; color: var(--muted); margin-top: 4px; letter-spacing: 0.3px; }
+
+  /* Profile pill */
+  .pet-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 100px; padding: 6px 16px 6px 8px;
+    font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: border-color 0.2s;
+    margin-bottom: 52px;
+  }
+  .pet-pill:hover { border-color: rgba(255,255,255,0.2); }
+  .pet-emoji { font-size: 20px; }
+  .pet-name { color: var(--text); font-weight: 500; }
+
+  /* Main orb — the Shazam button */
+  .orb-wrap {
+    position: relative;
+    width: 200px; height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 40px;
+  }
+
+  .ring { position: absolute; border-radius: 50%; border: 1px solid var(--ring-1); animation: pulse 3s ease-in-out infinite; }
+  .ring-1 { width: 200px; height: 200px; animation-delay: 0s; }
+  .ring-2 { width: 260px; height: 260px; border-color: var(--ring-2); animation-delay: 0.6s; }
+  .ring-3 { width: 320px; height: 320px; border-color: var(--ring-3); animation-delay: 1.2s; }
+
+  @keyframes pulse { 0%,100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.03); } }
+
+  .listening .ring { animation: pulse-fast 1s ease-in-out infinite; }
+  .listening .ring-1 { border-color: rgba(108,140,255,0.5); }
+  .listening .ring-2 { border-color: rgba(108,140,255,0.3); animation-delay: 0.2s; }
+  .listening .ring-3 { border-color: rgba(108,140,255,0.15); animation-delay: 0.4s; }
+  @keyframes pulse-fast { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
+
+  .responding .ring { animation: pulse-fast 1.5s ease-in-out infinite; }
+  .responding .ring-1 { border-color: rgba(52,211,153,0.5); }
+  .responding .ring-2 { border-color: rgba(52,211,153,0.25); }
+  .responding .ring-3 { border-color: rgba(52,211,153,0.1); }
+
+  .orb {
+    width: 140px; height: 140px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(108,140,255,0.9), rgba(80,60,180,0.95) 60%, rgba(40,30,100,1));
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 2;
+    box-shadow: 0 0 40px rgba(108,140,255,0.3), 0 0 0 1px rgba(108,140,255,0.2);
+    transition: transform 0.15s, box-shadow 0.3s;
+    flex-shrink: 0;
+  }
+  .orb:hover { transform: scale(1.04); box-shadow: 0 0 60px rgba(108,140,255,0.45), 0 0 0 1px rgba(108,140,255,0.35); }
+  .orb:active { transform: scale(0.97); }
+
+  .orb-icon { font-size: 48px; user-select: none; transition: opacity 0.3s; }
+
+  .listening .orb { background: radial-gradient(circle at 40% 35%, rgba(108,140,255,1), rgba(60,40,200,1) 60%, rgba(20,10,80,1)); box-shadow: 0 0 60px rgba(108,140,255,0.6), 0 0 0 1px rgba(108,140,255,0.4); }
+  .responding .orb { background: radial-gradient(circle at 40% 35%, rgba(52,211,153,0.9), rgba(16,140,90,0.95) 60%, rgba(5,60,40,1)); box-shadow: 0 0 60px rgba(52,211,153,0.5), 0 0 0 1px rgba(52,211,153,0.3); }
+
+  /* Status label */
+  .status-label {
+    font-size: 13px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+    height: 20px; transition: opacity 0.3s;
+  }
+
+  /* Waveform bar */
+  .waveform {
+    height: 40px; width: 100%; max-width: 300px;
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+    margin: 12px 0 0; opacity: 0; transition: opacity 0.4s;
+  }
+  .waveform.visible { opacity: 1; }
+  .bar {
+    width: 3px; border-radius: 2px; background: var(--accent);
+    transition: height 0.1s ease;
+    min-height: 3px;
+  }
+
+  /* Transcript bubble */
+  .transcript-area {
+    width: 100%; min-height: 20px; text-align: center;
+    margin-top: 20px; font-size: 15px; color: var(--muted);
+    font-style: italic; transition: opacity 0.3s;
+    min-height: 60px; display: flex; align-items: center; justify-content: center;
+  }
+  .transcript-area.has-text { color: var(--text); font-style: normal; }
+
+  /* Response card */
+  .response-card {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 20px 22px; margin-top: 12px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+    display: none;
+  }
+  .response-card.visible { opacity: 1; transform: none; display: block; }
+
+  .response-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .response-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(108,140,255,0.2); border: 1px solid rgba(108,140,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .response-name { font-size: 13px; font-weight: 500; color: var(--accent2); }
+  .response-text { font-size: 15px; line-height: 1.65; color: var(--text); }
+
+  /* History strip */
+  .history-strip {
+    width: 100%; margin-top: 28px; display: none; flex-direction: column; gap: 8px;
+  }
+  .history-strip.visible { display: flex; }
+  .history-label { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 14px; font-size: 13px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: border-color 0.2s;
+  }
+  .history-item:hover { border-color: rgba(255,255,255,0.15); }
+  .history-item .hi-q { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-item .hi-a { color: var(--text); flex: 1; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: italic; }
+
+  /* Setup overlay */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10,15,30,0.96);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .setup-card {
+    width: 100%; max-width: 380px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 24px;
+    padding: 32px 28px;
+  }
+  .setup-title { font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 6px; }
+  .setup-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 12px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; display: block; }
+  .form-input {
+    width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s; outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .emoji-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .emoji-btn {
+    width: 44px; height: 44px; border-radius: 10px; font-size: 22px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .emoji-btn.active { border-color: var(--accent); background: rgba(108,140,255,0.12); }
+  .cta {
+    width: 100%; padding: 14px; border-radius: 12px;
+    background: var(--accent); color: white; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 500; border: none; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s; margin-top: 8px;
+  }
+  .cta:hover { opacity: 0.9; }
+  .cta:active { transform: scale(0.98); }
+  .api-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; }
+  .api-note a { color: var(--accent); text-decoration: none; }
+
+  /* Error flash */
+  .error-toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 10px; padding: 10px 20px; font-size: 13px; color: var(--danger);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap;
+  }
+  .error-toast.show { opacity: 1; }
+
+  /* Phase indicator dots */
+  .phase-dots { display: flex; gap: 6px; margin-top: 10px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .dot.active { background: var(--accent); }
+  .dot.done { background: var(--success); }
+
+  select.form-input { appearance: none; }
+</style>
+</head>
+<body>
+
+<!-- Setup Overlay -->
+<div class="overlay" id="overlay">
+  <div class="setup-card">
+    <p class="setup-title">Meet your pet's voice 🐾</p>
+    <p class="setup-sub">Tell PawTalk about your companion and add your Anthropic API key to begin.</p>
+
+    <div class="form-group">
+      <label class="form-label">Pet's name</label>
+      <input class="form-input" id="petName" type="text" placeholder="e.g. Biscuit" maxlength="20" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Species</label>
+      <select class="form-input" id="petSpecies">
+        <option value="dog">Dog 🐶</option>
+        <option value="cat">Cat 🐱</option>
+        <option value="bird">Bird 🐦</option>
+        <option value="rabbit">Rabbit 🐰</option>
+        <option value="hamster">Hamster 🐹</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Personality</label>
+      <select class="form-input" id="petPersonality">
+        <option value="playful">Playful & energetic</option>
+        <option value="calm">Calm & wise</option>
+        <option value="dramatic">Dramatic & expressive</option>
+        <option value="sassy">Sassy & independent</option>
+        <option value="goofy">Goofy & silly</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Anthropic API Key</label>
+      <input class="form-input" id="apiKey" type="password" placeholder="sk-ant-..." />
+    </div>
+
+    <button class="cta" onclick="saveSetup()">Start listening →</button>
+    <p class="api-note">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Key is stored only in your browser.</p>
+  </div>
+</div>
+
+<!-- Error Toast -->
+<div class="error-toast" id="errorToast"></div>
+
+<div class="app" id="appMain">
+
+  <div class="header">
+    <div class="logo">Paw<span>Talk</span></div>
+    <div class="tagline">What is your pet thinking?</div>
+  </div>
+
+  <div class="pet-pill" onclick="showSetup()">
+    <span class="pet-emoji" id="pillEmoji">🐶</span>
+    <span class="pet-name" id="pillName">Biscuit</span>
+    <span style="color:var(--muted);margin-left:2px;font-size:11px">▾</span>
+  </div>
+
+  <!-- Phase dots: Ask → Pet Sound → Translate -->
+  <div class="phase-dots">
+    <div class="dot" id="dot0" title="Ask your question"></div>
+    <div class="dot" id="dot1" title="Pet makes a sound"></div>
+    <div class="dot" id="dot2" title="Translation"></div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-top:6px;margin-bottom:24px;letter-spacing:0.5px" id="phaseHint">Tap to ask</div>
+
+  <!-- Shazam-style orb -->
+  <div class="orb-wrap" id="orbWrap">
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+    <button class="orb" id="orbBtn" onclick="handleOrb()" aria-label="Start listening">
+      <span class="orb-icon" id="orbIcon">🐾</span>
+    </button>
+  </div>
+
+  <div class="status-label" id="statusLabel">Tap to start</div>
+
+  <div class="waveform" id="waveform">
+    <div class="bar" id="b0"></div><div class="bar" id="b1"></div><div class="bar" id="b2"></div>
+    <div class="bar" id="b3"></div><div class="bar" id="b4"></div><div class="bar" id="b5"></div>
+    <div class="bar" id="b6"></div><div class="bar" id="b7"></div><div class="bar" id="b8"></div>
+    <div class="bar" id="b9"></div><div class="bar" id="b10"></div><div class="bar" id="b11"></div>
+  </div>
+
+  <div class="transcript-area" id="transcriptArea">Tap the orb and ask your pet a question</div>
+
+  <div class="response-card" id="responseCard">
+    <div class="response-header">
+      <div class="response-avatar" id="responseAvatar">🐾</div>
+      <div class="response-name" id="responseName">Biscuit says...</div>
+    </div>
+    <div class="response-text" id="responseText"></div>
+  </div>
+
+  <div class="history-strip" id="historyStrip">
+    <div class="history-label">Recent</div>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── State Machine ────────────────────────────────────────
+// IDLE → ASK_LISTEN (user taps) → ASK_PROCESSING → PET_LISTEN → TRANSLATING → IDLE
+
+const STATES = { IDLE: 'idle', ASK_LISTEN: 'ask_listen', ASK_PROCESSING: 'ask_processing', PET_LISTEN: 'pet_listen', TRANSLATING: 'translating' };
+let state = STATES.IDLE;
+
+// ─── Pet Config ───────────────────────────────────────────
+let pet = { name: 'Biscuit', species: 'dog', personality: 'playful', emoji: '🐶' };
+let apiKey = '';
+const SPECIES_EMOJI = { dog: '🐶', cat: '🐱', bird: '🐦', rabbit: '🐰', hamster: '🐹' };
+const history = [];
+
+// ─── Audio / STT refs ────────────────────────────────────
+let audioCtx = null, analyser = null, source = null, stream = null;
+let waveRAF = null;
+let recognition = null;
+let petAudioTimer = null;
+let petSoundTimeout = null;
+
+// ─── Init ─────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('pawtalk_v2');
+  if (saved) {
+    try {
+      const d = JSON.parse(saved);
+      pet = d.pet; apiKey = d.apiKey;
+      updatePillUI();
+      document.getElementById('overlay').style.display = 'none';
+    } catch(e) {}
+  }
+});
+
+function saveSetup() {
+  const name = document.getElementById('petName').value.trim() || 'Buddy';
+  const species = document.getElementById('petSpecies').value;
+  const personality = document.getElementById('petPersonality').value;
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key || !key.startsWith('sk-ant-')) { showError('Please enter a valid Anthropic API key (starts with sk-ant-)'); return; }
+  pet = { name, species, personality, emoji: SPECIES_EMOJI[species] };
+  apiKey = key;
+  localStorage.setItem('pawtalk_v2', JSON.stringify({ pet, apiKey }));
+  document.getElementById('overlay').style.display = 'none';
+  updatePillUI();
+}
+
+function showSetup() {
+  document.getElementById('petName').value = pet.name;
+  document.getElementById('petSpecies').value = pet.species;
+  document.getElementById('petPersonality').value = pet.personality;
+  document.getElementById('apiKey').value = apiKey;
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function updatePillUI() {
+  document.getElementById('pillEmoji').textContent = pet.emoji;
+  document.getElementById('pillName').textContent = pet.name;
+  document.getElementById('responseAvatar').textContent = pet.emoji;
+  document.getElementById('responseName').textContent = `${pet.name} says...`;
+}
+
+// ─── Orb tap handler ──────────────────────────────────────
+function handleOrb() {
+  if (state === STATES.IDLE) startAskPhase();
+  else if (state === STATES.ASK_LISTEN) stopAskPhaseManually();
+  else if (state === STATES.PET_LISTEN) stopPetPhaseManually();
+}
+
+// ─── Phase 1: Ask question ────────────────────────────────
+async function startAskPhase() {
+  setState(STATES.ASK_LISTEN);
+  setPhase(0);
+  setStatus('Listening for your question...');
+  setTranscript('Ask your question now...', false);
+  hideResponse();
+
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { showError('Speech recognition not supported in this browser'); setState(STATES.IDLE); return; }
+
+  await startMic();
+
+  recognition = new SpeechRec();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  recognition.maxAlternatives = 1;
+
+  let finalText = '';
+  let silenceTimer = null;
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    const display = (finalText + interim).trim();
+    if (display) setTranscript('"' + display + '"', true);
+
+    // Auto-stop after 1s silence post speech
+    clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+      if (state === STATES.ASK_LISTEN) recognition.stop();
+    }, 1500);
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error !== 'no-speech') showError('Mic error: ' + e.error);
+    finishAskPhase(finalText.trim());
+  };
+
+  recognition.onend = () => {
+    finishAskPhase(finalText.trim());
+  };
+
+  recognition.start();
+}
+
+function stopAskPhaseManually() {
+  if (recognition) recognition.stop();
+}
+
+function finishAskPhase(question) {
+  stopMic();
+  if (!question) {
+    setState(STATES.IDLE); setStatus('Tap to start'); setPhase(-1);
+    setTranscript('Tap the orb and ask your pet a question', false);
+    return;
+  }
+  setState(STATES.ASK_PROCESSING);
+  setStatus('Got it! Now make a pet sound...');
+  setPhase(1);
+  setTranscript('"' + question + '"', true);
+  // Small delay then immediately enter pet listen phase
+  setTimeout(() => startPetPhase(question), 600);
+}
+
+// ─── Phase 2: Pet sound ───────────────────────────────────
+async function startPetPhase(question) {
+  setState(STATES.PET_LISTEN);
+  setStatus('Make a sound for ' + pet.name + ' now!');
+  setTranscript('🎙️  Waiting for pet sound...', false);
+
+  await startMic();
+
+  // ── Fixed logic: detect amplitude spike from pet sound ──
+  // We watch RMS energy. If it exceeds threshold for 200ms → capture
+  let noiseFloor = 0;
+  let calibrating = true;
+  let samples = [];
+  let triggered = false;
+  let captureStart = null;
+  const CALIBRATION_MS = 800;
+  const TRIGGER_DB = 8; // dB above noise floor
+  const HOLD_MS = 2000; // record for 2s after trigger
+
+  const calibrateStart = Date.now();
+
+  function tick() {
+    if (state !== STATES.PET_LISTEN) return;
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(buf);
+    let rms = 0;
+    for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; rms += v * v; }
+    rms = Math.sqrt(rms / buf.length);
+    const db = rms > 0 ? 20 * Math.log10(rms) : -100;
+
+    const elapsed = Date.now() - calibrateStart;
+    if (elapsed < CALIBRATION_MS) {
+      samples.push(db);
+      noiseFloor = samples.reduce((a, b) => a + b, 0) / samples.length;
+    } else {
+      calibrating = false;
+    }
+
+    if (!calibrating && !triggered) {
+      const aboveFloor = db - noiseFloor;
+      if (aboveFloor > TRIGGER_DB) {
+        triggered = true;
+        captureStart = Date.now();
+        setStatus('Sound detected! Translating...');
+        setTranscript('🔊  Pet sound captured!', false);
+        // Wait HOLD_MS then translate
+        petSoundTimeout = setTimeout(() => finishPetPhase(question), HOLD_MS);
+      }
+    }
+
+    waveRAF = requestAnimationFrame(tick);
+  }
+
+  // Fallback: if no sound detected in 10s, show hint
+  petAudioTimer = setTimeout(() => {
+    if (state === STATES.PET_LISTEN && !triggered) {
+      setStatus('No sound yet — try barking, meowing...');
+    }
+  }, 10000);
+
+  // Fallback stop after 30s
+  const hardStop = setTimeout(() => {
+    if (state === STATES.PET_LISTEN) {
+      showError('No pet sound detected. Try again!');
+      stopPetPhaseManually();
+    }
+  }, 30000);
+
+  waveRAF = requestAnimationFrame(tick);
+}
+
+function stopPetPhaseManually() {
+  clearTimeout(petAudioTimer);
+  clearTimeout(petSoundTimeout);
+  cancelAnimationFrame(waveRAF);
+  stopMic();
+  setState(STATES.IDLE);
+  setStatus('Tap to start');
+  setPhase(-1);
+  setTranscript('Tap the orb and ask your pet a question', false);
+}
+
+async function finishPetPhase(question) {
+  clearTimeout(petAudioTimer);
+  cancelAnimationFrame(waveRAF);
+  stopMic();
+  setState(STATES.TRANSLATING);
+  setStatus('Translating...');
+  setPhase(2);
+  await translate(question);
+}
+
+// ─── Phase 3: Translate ───────────────────────────────────
+async function translate(question) {
+  const systemPrompt = buildSystemPrompt();
+  const userMsg = `The owner asked their ${pet.species} named ${pet.name}: "${question}"\n\n${pet.name} made a vocalization/sound. Translate what ${pet.name} is saying in response to this question. Reply in first person as ${pet.name}. Keep it to 2-3 sentences max. Be ${pet.personality}.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'API error ' + res.status);
+    }
+
+    const data = await res.json();
+    const reply = data.content?.find(b => b.type === 'text')?.text || '...';
+
+    showResponse(reply);
+    addHistory(question, reply);
+    setState(STATES.IDLE);
+    setStatus('Tap to ask again');
+    setPhase(-1);
+    setTranscript('"' + question + '"', true);
+  } catch (e) {
+    showError(e.message || 'API call failed');
+    setState(STATES.IDLE);
+    setStatus('Tap to start');
+    setPhase(-1);
+  }
+}
+
+function buildSystemPrompt() {
+  const personalities = {
+    playful: 'enthusiastic, bouncy, uses exclamation marks, easily excited, mentions wanting to play',
+    calm: 'wise, serene, thoughtful, philosophical, uses gentle language',
+    dramatic: 'theatrical, over-the-top, treats everything as a major event',
+    sassy: 'sarcastic, witty, independent, slightly dismissive but loveable',
+    goofy: 'silly, derails mid-thought, mentions random unrelated things, loveable chaos'
+  };
+  return `You are ${pet.name}, a ${pet.personality} ${pet.species}. Personality: ${personalities[pet.personality] || 'friendly'}. You speak in first person, translating your vocalizations for your owner. Keep responses short (2-3 sentences), in character, and heartwarming. Never break character.`;
+}
+
+// ─── Mic / AudioContext ───────────────────────────────────
+async function startMic() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    startWaveform();
+  } catch(e) {
+    showError('Microphone access denied. Please allow mic access.');
+    setState(STATES.IDLE);
+  }
+}
+
+function stopMic() {
+  if (source) { try { source.disconnect(); } catch(e){} source = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  cancelAnimationFrame(waveRAF);
+  document.getElementById('waveform').classList.remove('visible');
+}
+
+function startWaveform() {
+  const bars = Array.from({length: 12}, (_, i) => document.getElementById('b' + i));
+  document.getElementById('waveform').classList.add('visible');
+  function draw() {
+    if (!analyser) return;
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(buf);
+    const step = Math.floor(buf.length / 12);
+    bars.forEach((bar, i) => {
+      const val = buf[i * step] / 255;
+      const h = Math.max(3, Math.round(val * 36));
+      if (bar) bar.style.height = h + 'px';
+    });
+    waveRAF = requestAnimationFrame(draw);
+  }
+  waveRAF = requestAnimationFrame(draw);
+}
+
+// ─── UI helpers ───────────────────────────────────────────
+function setState(s) {
+  state = s;
+  const wrap = document.getElementById('orbWrap');
+  wrap.className = 'orb-wrap';
+  if (s === STATES.ASK_LISTEN || s === STATES.PET_LISTEN) wrap.classList.add('listening');
+  if (s === STATES.TRANSLATING) wrap.classList.add('responding');
+  const icons = { idle: '🐾', ask_listen: '🎙️', ask_processing: '⏳', pet_listen: '👂', translating: '✨' };
+  document.getElementById('orbIcon').textContent = icons[s] || '🐾';
+}
+
+function setStatus(msg) { document.getElementById('statusLabel').textContent = msg; }
+
+function setTranscript(msg, isText) {
+  const el = document.getElementById('transcriptArea');
+  el.textContent = msg;
+  el.className = 'transcript-area' + (isText ? ' has-text' : '');
+}
+
+function setPhase(active) {
+  const hints = ['Ask your question', 'Make a pet sound', 'Translating...'];
+  for (let i = 0; i < 3; i++) {
+    const d = document.getElementById('dot' + i);
+    d.className = 'dot' + (i < active ? ' done' : '') + (i === active ? ' active' : '');
+  }
+  document.getElementById('phaseHint').textContent = active >= 0 ? hints[active] : 'Tap to ask';
+}
+
+function showResponse(text) {
+  document.getElementById('responseText').textContent = text;
+  const card = document.getElementById('responseCard');
+  card.style.display = 'block';
+  requestAnimationFrame(() => card.classList.add('visible'));
+}
+
+function hideResponse() {
+  const card = document.getElementById('responseCard');
+  card.classList.remove('visible');
+  setTimeout(() => { card.style.display = 'none'; }, 400);
+}
+
+function addHistory(question, answer) {
+  history.unshift({ q: question, a: answer });
+  if (history.length > 3) history.pop();
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<span class="hi-q">${item.q}</span><span class="hi-a">${item.a.substring(0, 40)}…</span>`;
+    div.onclick = () => {
+      document.getElementById('responseText').textContent = item.a;
+      const card = document.getElementById('responseCard');
+      card.style.display = 'block';
+      requestAnimationFrame(() => card.classList.add('visible'));
+    };
+    list.appendChild(div);
+  });
+  document.getElementById('historyStrip').className = 'history-strip visible';
+}
+
+function showError(msg) {
+  const toast = document.getElementById('errorToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
